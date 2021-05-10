@@ -1,0 +1,91 @@
+     Program: ExtDefList
+%无错误
+
+     ExtDefList: ExtDef ExtDefList
+               | %empty
+%无错误
+
+     ExtDef: Specifier ExtDecList SEMI
+           | Specifier SEMI
+           | Specifier FunDec （函数名及参数列表） CompSt （函数体）
+%无错误，需要记录函数定义的各种信息，
+
+    ExtDecList: VarDec
+              | VarDec COMMA ExtDecList
+%需要不停地插入符号表 并且检查是否重名
+
+    Specifier: TYPE
+             | StructSpecifier
+%在这里应该是，直接把对应的类型记下来就可以了。
+
+    StructSpecifier: STRUCT OptTag LC DefList RC 
+                   | STRUCT Tag %检查Tag是否曾经被定义过，并把这个信息记下来，往上传递。
+
+
+    OptTag: ID %检查是否定义重名结构体
+          | %empty
+
+    Tag: ID %检查Tag是否曾经被定义过，并把这个信息记下来，往上传递。
+
+    VarDec: ID
+          | VarDec LB INT RB
+%VarDec: ID自身带着类型。这是一个类型，它可能只是a，也可能使a[][]之类的
+
+    FunDec: ID LP VarList RP
+          | ID LP RP
+%检查是否定义重名函数
+
+    VarList: ParamDec COMMA VarList
+           | ParamDec
+%检查是否定义重名变量，并且考虑它的域是在哪里的（应该默认是在函数体内部）。
+
+    ParamDec: Specifier VarDec
+%函数形参定义，把每一个的类型记下来即可。
+
+    CompSt: LC DefList StmtList RC
+%无错误
+
+    StmtList: Stmt StmtList
+            | %empty
+
+    Stmt: Exp SEMI %无错误
+        | CompSt %无错误
+        | RETURN Exp SEMI %检查是否与对应函数的返回值类型相同
+        | IF LP Exp RP Stmt
+        | IF LP Exp RP Stmt ELSE Stmt
+        | WHILE LP Exp RP Stmt
+%Stmt: 函数内部可以出现的语句
+
+    DefList: Def DefList
+           | %empty
+
+    Def: Specifier DecList SEMI
+
+    DecList: Dec
+           | Dec COMMA DecList
+
+    Dec: VarDec
+       | VarDec ASSIGNOP Exp
+%Dec：这是一个类型，它可能只是a，也可能使a[][]之类的，可能是在定义也可能实在使用。
+
+    Exp: Exp ASSIGNOP Exp
+       | Exp AND Exp
+       | Exp OR Exp
+       | Exp RELOP Exp
+       | Exp PLUS Exp
+       | Exp MINUS Exp
+       | Exp STAR Exp
+       | Exp DIV Exp
+       | LP Exp RP
+       | MINUS Exp
+       | NOT Exp
+       | ID LP Args RP
+       | ID LP RP
+       | Exp LB Exp RB
+       | Exp DOT ID
+       | ID
+       | INT
+       | FLOAT
+
+    Args: Exp COMMA Args
+        | Exp
